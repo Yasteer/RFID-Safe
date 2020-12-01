@@ -14,6 +14,9 @@
 #define LED_Unlocked    1
 #define LED_Locked      2
 #define LED_AddNewUser  3
+#define Lock_Button     4
+
+bool Lock_Requested = true;
 
 // SPI output ports:
 #define RST   9
@@ -26,26 +29,45 @@ MFRC522 rfid(SS, RST);
 
 // RFID 
 byte Master_Tag_ID[4] = {0,0,0,0}; // ID number of master tag.
-byte Read_Tag_ID[4];
 
 // Servo
 Servo M1;
 
 void setup() {
   Serial.begin(9600);
-
+  pinMode(Lock_Button, INPUT);
+  
   // RFID ID Device comes with a SPI interface.
   SPI.begin();
   rfid.PCD_Init();
 
   // Set servo to pin 5 on the Uno.
   M1.attach(5, 1000, 2000);
+  M1.writeMicroseconds(1000); // Lock safe.
 }
 
 void loop() {
+  Lock_Requested = digitalRead(Lock_Button);
+  if(Lock_Requested == true)
+  {
+    M1.writeMicroseconds(1000);
+  }
+  
   if (!rfid.PICC_IsNewCardPresent())
   {
     return; // If no card is detected, keep the safe locked. 
   }
-  
+  else
+  {
+      if (rfid.uid.uidByte[0] != Master_Tag_ID[0] || rfid.uid.uidByte[1] != Master_Tag_ID[1] || rfid.uid.uidByte[2] != Master_Tag_ID[2] || rfid.uid.uidByte[3] != Master_Tag_ID[3] || rfid.uid.uidByte[4] != Master_Tag_ID[4])
+      {
+        Serial.println("New PICC detected! PICC not authorised"); 
+      }
+      else
+      {
+        Serial.println("Master PICC deetcted! Unlocking the goods...");
+        M1.writeMicroseconds(2000); // Unlock safe.
+      }
+  }
+
 }
