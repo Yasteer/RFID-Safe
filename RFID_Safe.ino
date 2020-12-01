@@ -47,5 +47,5 @@ void loop() {
   {
     return; // If no card is detected, keep the safe locked. 
   }
-  Serial.println("New login attempted with a");
+  
 }
